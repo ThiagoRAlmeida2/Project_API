@@ -15,7 +15,6 @@ public class Empresa {
 
     private String nome;
     private String cnpj;
-    private String senha;
 
     @OneToOne
     @JoinColumn(name = "usuario_id", unique = true)

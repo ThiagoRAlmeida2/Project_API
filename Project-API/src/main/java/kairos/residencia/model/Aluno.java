@@ -17,7 +17,6 @@ public class Aluno {
     private String curso;
     @Column(unique = true)
     private String matricula;
-    private String Senha;
 
     @OneToOne
     @JoinColumn(name = "usuario_id", unique = true)
