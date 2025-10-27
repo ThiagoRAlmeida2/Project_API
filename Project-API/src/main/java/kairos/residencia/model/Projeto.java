@@ -25,4 +25,6 @@ public class Projeto {
 
     @OneToMany(mappedBy = "projeto", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Inscricao> inscricoes = new ArrayList<>();
+
+    private boolean encerrado = false;
 }
