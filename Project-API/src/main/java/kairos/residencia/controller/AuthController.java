@@ -1,5 +1,6 @@
 package kairos.residencia.controller;
 
+import kairos.residencia.Dto.ResetSenhaRequest;
 import kairos.residencia.model.Aluno;
 import kairos.residencia.model.Empresa;
 import kairos.residencia.model.Usuario;
@@ -11,6 +12,8 @@ import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -72,4 +75,17 @@ public class AuthController {
             return ResponseEntity.status(401).body("Credenciais inválidas");
         }
     }
+
+    @PostMapping("/resetar-senha")
+    public ResponseEntity<?> resetarSenha(@RequestBody ResetSenhaRequest req) {
+        var usuario = usuarioRepo.findByEmail(req.getEmail()).orElse(null);
+        if (usuario == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "Usuário não encontrado"));
+        }
+
+        usuario.setSenha(passwordEncoder.encode(req.getNovaSenha()));
+        usuarioRepo.save(usuario);
+        return ResponseEntity.ok(Map.of("message", "Senha redefinida com sucesso!"));
+    }
+
 }
