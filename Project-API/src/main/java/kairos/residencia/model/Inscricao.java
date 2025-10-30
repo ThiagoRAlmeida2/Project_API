@@ -1,3 +1,5 @@
+// src/main/java/kairos/residencia/model/Inscricao.java
+
 package kairos.residencia.model;
 
 import jakarta.persistence.*;
@@ -13,14 +15,15 @@ public class Inscricao {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="projeto_id")
     private Projeto projeto;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="aluno_id")
     private Aluno aluno;
 
     private LocalDateTime dataInscricao = LocalDateTime.now();
-    private String papel; // ex: "participante"
+    private String papel;
+    private String status = "PENDENTE";
 }

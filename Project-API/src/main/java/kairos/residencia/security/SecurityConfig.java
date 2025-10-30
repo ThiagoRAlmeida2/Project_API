@@ -47,14 +47,14 @@ public class SecurityConfig {
                                 "/api/projetos/public"
                         ).permitAll()
 
-                        // 🔐 Apenas EMPRESA pode criar, listar e encerrar seus projetos
                         .requestMatchers(
                                 "/api/projetos/meus",
                                 "/api/projetos/criar",
-                                "/api/projetos/*/encerrar"
+                                "/api/projetos/*/encerrar",
+                                "/api/usuario/dashboard/candidatos",
+                                "/api/usuario/aluno/**",
+                                "/api/usuario/inscricao/**"
                         ).hasRole("EMPRESA")
-
-                        // 🔐 Aluno pode se inscrever e listar suas inscrições (NOVO)
                         .requestMatchers(
                                 "/api/projetos/*/inscrever",
                                 "/api/projetos/inscricoes"

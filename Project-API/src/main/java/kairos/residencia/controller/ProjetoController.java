@@ -3,6 +3,7 @@ package kairos.residencia.controller;
 import kairos.residencia.Dto.ProjetoDTO;
 import kairos.residencia.model.*;
 import kairos.residencia.repository.*;
+import kairos.residencia.Dto.InscricaoProjetoResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,7 +38,6 @@ public class ProjetoController {
             LocalDate dataInicio,
             LocalDate dataFim
     ) {}
-
     // 🔹 Listar todos (público) - APENAS ATIVOS com JOIN FETCH
     @GetMapping("/public")
     public ResponseEntity<List<ProjetoResponse>> listarPublico() {
@@ -61,45 +61,53 @@ public class ProjetoController {
     }
 
     // 🔹 Listar projetos nos quais o aluno está inscrito
-    // 🔹 Listar projetos nos quais o aluno está inscrito
     @GetMapping("/inscricoes")
-    public ResponseEntity<?> listarInscricoesAluno(@AuthenticationPrincipal User user) {
+    // 🚩 MUDANÇA: Altera o retorno para usar a nova classe DTO
+    public ResponseEntity<List<InscricaoProjetoResponseDTO>> listarInscricoesAluno(@AuthenticationPrincipal User user) {
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         Aluno aluno = alunoRepo.findByUsuario(usuario);
         if (aluno == null) {
-            return ResponseEntity.status(403).body("Apenas alunos podem acessar suas inscrições");
+            return ResponseEntity.status(403).body(List.of());
         }
 
         List<Inscricao> inscricoes = inscricaoRepo.findByAluno_Id(aluno.getId());
 
-        List<ProjetoResponse> projetosInscritos = inscricoes.stream()
-                // 🚩 CORREÇÃO: Filtra inscrições onde o Projeto é nulo (dados inconsistentes)
+        // 🚩 CRÍTICO: Mapeamento para a nova classe DTO
+        List<InscricaoProjetoResponseDTO> projetosInscritos = inscricoes.stream()
                 .filter(inscricao -> inscricao.getProjeto() != null)
                 .map(inscricao -> {
                     Projeto p = inscricao.getProjeto();
-                    return new ProjetoResponse(
-                            p.getId(),
-                            p.getNome(),
-                            p.getDescricao(),
-                            p.getDataCriacao(),
-                            p.getEmpresa().getNome(),
-                            p.isEncerrado(),
-                            p.getTags(),
-                            p.getRegime(),
-                            p.getDataInicio(),
-                            p.getDataFim()
-                    );
+
+                    InscricaoProjetoResponseDTO dto = new InscricaoProjetoResponseDTO();
+
+                    // Mapeia campos do Projeto
+                    dto.setId(p.getId());
+                    dto.setNome(p.getNome());
+                    dto.setDescricao(p.getDescricao());
+                    dto.setDataCriacao(p.getDataCriacao());
+                    dto.setEmpresaNome(p.getEmpresa().getNome());
+                    dto.setEncerrado(p.isEncerrado());
+                    dto.setTags(p.getTags());
+                    dto.setRegime(p.getRegime());
+                    dto.setDataInicio(p.getDataInicio());
+                    dto.setDataFim(p.getDataFim());
+
+                    // 🚩 ADICIONA O STATUS DA INSCRIÇÃO!
+                    dto.setStatus(inscricao.getStatus());
+
+                    return dto;
                 })
                 .toList();
+
         return ResponseEntity.ok(projetosInscritos);
     }
 
 
     // 🔹 Criar projeto
     @PostMapping("/criar")
-    public ResponseEntity<?> criarProjeto(
+    public ResponseEntity<ProjetoResponse> criarProjeto(
             @AuthenticationPrincipal User user,
             @RequestBody ProjetoDTO req
     ) {
@@ -107,7 +115,7 @@ public class ProjetoController {
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         Empresa empresa = empresaRepo.findByUsuario(usuario);
         if (empresa == null) {
-            return ResponseEntity.badRequest().body("Apenas empresas podem criar projetos");
+            return ResponseEntity.badRequest().body(null);
         }
         Projeto novo = new Projeto();
         novo.setNome(req.getNome());
@@ -140,13 +148,13 @@ public class ProjetoController {
 
     // 🔹 Listar projetos da empresa logada
     @GetMapping("/meus")
-    public ResponseEntity<?> listarMeusProjetos(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<ProjetoResponse>> listarMeusProjetos(@AuthenticationPrincipal User user) {
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         Empresa empresa = empresaRepo.findByUsuario(usuario);
         if (empresa == null) {
-            return ResponseEntity.status(403).body("Apenas empresas podem acessar seus projetos");
+            return ResponseEntity.status(403).body(List.of());
         }
 
         List<Projeto> projetos = projetoRepo.findByEmpresa(empresa);
@@ -173,7 +181,7 @@ public class ProjetoController {
 
     // 🔹 Encerrar projeto
     @PostMapping("/{id}/encerrar")
-    public ResponseEntity<?> encerrarProjeto(
+    public ResponseEntity<String> encerrarProjeto(
             @AuthenticationPrincipal User user,
             @PathVariable Long id
     ) {
@@ -203,7 +211,7 @@ public class ProjetoController {
 
     // 🔹 Inscrever-se no projeto (ENDPOINT DE INSCRIÇÃO)
     @PostMapping("/{id}/inscrever")
-    public ResponseEntity<?> inscreverProjeto(
+    public ResponseEntity<String> inscreverProjeto(
             @AuthenticationPrincipal User user,
             @PathVariable Long id
     ) {
@@ -238,7 +246,7 @@ public class ProjetoController {
 
     // 🔹 Cancelar inscrição em projeto
     @DeleteMapping("/{id}/cancelar-inscricao")
-    public ResponseEntity<?> cancelarInscricao(
+    public ResponseEntity<String> cancelarInscricao(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Long projetoId
     ) {
@@ -252,6 +260,12 @@ public class ProjetoController {
 
         Inscricao inscricao = inscricaoRepo.findByProjeto_IdAndAluno_Id(projetoId, aluno.getId())
                 .orElseThrow(() -> new RuntimeException("Inscrição não encontrada para este aluno e projeto"));
+
+        // Verifica se o status permite cancelamento (e.g., só PENDENTE pode cancelar)
+        if (!"PENDENTE".equals(inscricao.getStatus())) {
+            return ResponseEntity.badRequest().body("Não é possível cancelar uma inscrição que já foi " + inscricao.getStatus() + ".");
+        }
+
 
         inscricaoRepo.delete(inscricao);
 
