@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,16 +21,26 @@ public class ProjetoController {
     private final ProjetoRepository projetoRepo;
     private final UsuarioRepository usuarioRepo;
     private final EmpresaRepository empresaRepo;
-    private final AlunoRepository alunoRepo; // 🚩 NOVO REPO INJETADO
-    private final InscricaoRepository inscricaoRepo; // 🚩 NOVO REPO INJETADO
+    private final AlunoRepository alunoRepo;
+    private final InscricaoRepository inscricaoRepo;
 
-
-    public record ProjetoResponse(Long id, String nome, String descricao, LocalDateTime dataCriacao, String empresaNome, boolean encerrado) {}
+    public record ProjetoResponse(
+            Long id,
+            String nome,
+            String descricao,
+            LocalDateTime dataCriacao,
+            String empresaNome,
+            boolean encerrado,
+            // NOVOS CAMPOS
+            String tags,
+            String regime,
+            LocalDate dataInicio,
+            LocalDate dataFim
+    ) {}
 
     // 🔹 Listar todos (público) - APENAS ATIVOS com JOIN FETCH
     @GetMapping("/public")
     public ResponseEntity<List<ProjetoResponse>> listarPublico() {
-        // Usa o método que carrega a Empresa e filtra por ativos
         List<Projeto> projetosAtivos = projetoRepo.findAllActiveWithEmpresa();
 
         List<ProjetoResponse> projetos = projetosAtivos.stream()
@@ -39,14 +50,18 @@ public class ProjetoController {
                         p.getDescricao(),
                         p.getDataCriacao(),
                         p.getEmpresa().getNome(),
-                        p.isEncerrado()
+                        p.isEncerrado(),
+                        p.getTags(),
+                        p.getRegime(),
+                        p.getDataInicio(),
+                        p.getDataFim()
                 ))
                 .toList();
-
         return ResponseEntity.ok(projetos);
     }
 
-    // 🔹 Listar projetos nos quais o aluno está inscrito (NOVO ENDPOINT)
+    // 🔹 Listar projetos nos quais o aluno está inscrito
+    // 🔹 Listar projetos nos quais o aluno está inscrito
     @GetMapping("/inscricoes")
     public ResponseEntity<?> listarInscricoesAluno(@AuthenticationPrincipal User user) {
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
@@ -59,8 +74,9 @@ public class ProjetoController {
 
         List<Inscricao> inscricoes = inscricaoRepo.findByAluno_Id(aluno.getId());
 
-        // Mapeia as inscrições para a lista de ProjetosResponse
         List<ProjetoResponse> projetosInscritos = inscricoes.stream()
+                // 🚩 CORREÇÃO: Filtra inscrições onde o Projeto é nulo (dados inconsistentes)
+                .filter(inscricao -> inscricao.getProjeto() != null)
                 .map(inscricao -> {
                     Projeto p = inscricao.getProjeto();
                     return new ProjetoResponse(
@@ -69,11 +85,14 @@ public class ProjetoController {
                             p.getDescricao(),
                             p.getDataCriacao(),
                             p.getEmpresa().getNome(),
-                            p.isEncerrado()
+                            p.isEncerrado(),
+                            p.getTags(),
+                            p.getRegime(),
+                            p.getDataInicio(),
+                            p.getDataFim()
                     );
                 })
                 .toList();
-
         return ResponseEntity.ok(projetosInscritos);
     }
 
@@ -84,30 +103,36 @@ public class ProjetoController {
             @AuthenticationPrincipal User user,
             @RequestBody ProjetoDTO req
     ) {
-        // ... (código existente)
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
         Empresa empresa = empresaRepo.findByUsuario(usuario);
         if (empresa == null) {
             return ResponseEntity.badRequest().body("Apenas empresas podem criar projetos");
         }
-
         Projeto novo = new Projeto();
         novo.setNome(req.getNome());
         novo.setDescricao(req.getDescricao());
         novo.setEmpresa(empresa);
         novo.setEncerrado(false);
+        novo.setTags(req.getTags());
+        novo.setRegime(req.getRegime());
+        novo.setDataInicio(req.getDataInicio());
+        novo.setDataFim(req.getDataFim());
 
         Projeto salvo = projetoRepo.save(novo);
 
+        // Retorna o DTO com os novos campos
         ProjetoResponse response = new ProjetoResponse(
                 salvo.getId(),
                 salvo.getNome(),
                 salvo.getDescricao(),
                 salvo.getDataCriacao(),
                 salvo.getEmpresa().getNome(),
-                salvo.isEncerrado()
+                salvo.isEncerrado(),
+                salvo.getTags(),
+                salvo.getRegime(),
+                salvo.getDataInicio(),
+                salvo.getDataFim()
         );
 
         return ResponseEntity.ok(response);
@@ -116,7 +141,6 @@ public class ProjetoController {
     // 🔹 Listar projetos da empresa logada
     @GetMapping("/meus")
     public ResponseEntity<?> listarMeusProjetos(@AuthenticationPrincipal User user) {
-        // ... (código existente)
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -127,6 +151,7 @@ public class ProjetoController {
 
         List<Projeto> projetos = projetoRepo.findByEmpresa(empresa);
 
+        // Mapeia para o DTO com os novos campos
         List<ProjetoResponse> meusProjetosDTO = projetos.stream()
                 .map(p -> new ProjetoResponse(
                         p.getId(),
@@ -134,7 +159,11 @@ public class ProjetoController {
                         p.getDescricao(),
                         p.getDataCriacao(),
                         p.getEmpresa().getNome(),
-                        p.isEncerrado()
+                        p.isEncerrado(),
+                        p.getTags(),
+                        p.getRegime(),
+                        p.getDataInicio(),
+                        p.getDataFim()
                 ))
                 .toList();
 
@@ -148,7 +177,6 @@ public class ProjetoController {
             @AuthenticationPrincipal User user,
             @PathVariable Long id
     ) {
-        // ... (código existente)
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -207,13 +235,13 @@ public class ProjetoController {
 
         return ResponseEntity.ok("Inscrição realizada com sucesso!");
     }
-    // 🔹 Cancelar inscrição em projeto (apenas aluno autenticado) 🚩 NOVO ENDPOINT
+
+    // 🔹 Cancelar inscrição em projeto
     @DeleteMapping("/{id}/cancelar-inscricao")
     public ResponseEntity<?> cancelarInscricao(
             @AuthenticationPrincipal User user,
             @PathVariable("id") Long projetoId
     ) {
-        // 1. Encontrar o usuário e aluno logado
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -222,11 +250,9 @@ public class ProjetoController {
             return ResponseEntity.status(403).body("Apenas alunos podem cancelar inscrições");
         }
 
-        // 2. Encontrar a inscrição específica
         Inscricao inscricao = inscricaoRepo.findByProjeto_IdAndAluno_Id(projetoId, aluno.getId())
                 .orElseThrow(() -> new RuntimeException("Inscrição não encontrada para este aluno e projeto"));
 
-        // 3. Deletar a inscrição
         inscricaoRepo.delete(inscricao);
 
         return ResponseEntity.ok("Inscrição cancelada com sucesso.");

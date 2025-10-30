@@ -1,30 +1,32 @@
 package kairos.residencia.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Data;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
 
 @Entity
-@Table(name="projeto")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Projeto {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String nome;
-    @Lob
+
+    @Column(length = 2000)
     private String descricao;
+
     private LocalDateTime dataCriacao = LocalDateTime.now();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id")
     private Empresa empresa;
 
-    @OneToMany(mappedBy = "projeto", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Inscricao> inscricoes = new ArrayList<>();
-
     private boolean encerrado = false;
+    private String tags;
+    private String regime;
+    private LocalDate dataInicio;
+    private LocalDate dataFim;
 }
