@@ -1,38 +1,53 @@
-# 📌 Kairos API
+# 🌐 Kairos API
 
-API desenvolvida em **Spring Boot** para gerenciamento de usuários, autenticação via **JWT**, perfis de **Aluno** e **Empresa**, e integração com banco de dados **MySQL**.  
-Projeto criado como parte da residência do **Porto Digital**.
+API desenvolvida em **Spring Boot** para o gerenciamento de **usuários**, **autenticação JWT** e perfis de **Aluno** e **Empresa**, com integração ao banco de dados **MySQL**.
+
+Projeto criado como parte da residência do **Porto Digital** 🧭.
 
 ---
 
-## 🚀 Tecnologias utilizadas
+## 🧾 Badges
+
+![Java](https://img.shields.io/badge/Java-24-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.5-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-Security-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-Build%20Tool-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)
+
+---
+
+## 🚀 Tecnologias Utilizadas
 
 - **Java 24**
 - **Spring Boot 3.5.5**
-  - Spring Web (REST API)
-  - Spring Data JPA (ORM)
-  - Spring Security (Autenticação/Autorização)
-- **JWT (JSON Web Token)** – `io.jsonwebtoken`
+    - Spring Web → Criação de APIs RESTful
+    - Spring Data JPA → Mapeamento ORM
+    - Spring Security → Autenticação e autorização
+- **JWT (JSON Web Token)** — via `io.jsonwebtoken`
 - **MySQL 8**
 - **Lombok**
 - **Maven**
 
 ---
 
-## 📂 Estrutura principal
+## 🧩 Estrutura do Projeto
 
+```
 src/main/java/kairos/residencia/
-├── model/ # Entidades JPA (Usuario, Aluno, Empresa, etc.)
-├── repository/ # Repositórios JPA
-├── security/ # JWT, filtros e configuração de segurança
-├── controller/ # Endpoints REST
-└── SrcApplication.java # Classe principal (entrypoint)
+├── controller/        # Endpoints REST
+├── Dto/
+├── model/             # Entidades JPA (Usuario, Aluno, Empresa, etc.)
+├── repository/        # Interfaces de persistência (JPA)
+├── response/
+├── security/          # JWT, filtros e configurações de segurança
+└── KairosApplication.java  # Classe principal (entrypoint)
+```
 
 ---
 
 ## ⚙️ Configuração do Banco de Dados
 
-No arquivo `src/main/resources/application.properties` configure:
+No arquivo **`src/main/resources/application.properties`**, configure suas credenciais do MySQL:
 
 ```properties
 # Porta do servidor
@@ -54,61 +69,151 @@ app.jwt.secret=MinhaChaveSecretaSuperSegura123456
 app.jwt.expiration-ms=86400000
 
 spring.main.allow-bean-definition-overriding=true
-📌 Certifique-se de criar o banco antes de rodar:
 ```
-```bash 
+
+📌 **Antes de rodar**, crie o banco de dados no MySQL:
+
+```sql
 CREATE DATABASE kairos_db;
 ```
 
-▶️ Como rodar o projeto
+---
+
+## ▶️ Como Rodar o Projeto
+
 Clone o repositório:
 
+```bash
 git clone https://github.com/ThiagoRAlmeida2/Project_API
-cd kairos-api
+```
+
 Compile o projeto com Maven:
 
 ```bash
-
 mvn clean package
-## Rode a aplicação:
+```
 
+Execute a aplicação:
+
+```bash
 mvn spring-boot:run
-Acesse:
-
-http://localhost:8081
 ```
 
-## 🔑 Autenticação
-A API utiliza JWT. O fluxo é:
+Acesse no navegador ou via API client:
 
-Usuário faz login (/auth/login) → retorna token JWT.
+👉 **http://localhost:8081**
 
-Token deve ser enviado no header Authorization:
+---
 
-```makefile
+## 🔐 Autenticação JWT
+
+A autenticação é feita via **token JWT**.
+
+### 🔄 Fluxo de Autenticação
+
+1. O usuário faz login em `/auth/login`
+2. A API valida as credenciais e retorna um token JWT
+3. O token deve ser enviado no **header Authorization** para endpoints protegidos:
+
+```http
 Authorization: Bearer <seu_token>
-Dependendo do role (ROLE_ALUNO, ROLE_EMPRESA, ROLE_ADMIN), terá permissões diferentes.
-
-📡 Endpoints principais
-Método	Endpoint	Descrição	Permissão
-POST	/auth/login	Autentica e retorna JWT	Público
-POST	/usuarios	Cria um novo usuário	Público
-GET	/usuarios/me	Retorna perfil do usuário autenticado	Autenticado
-GET	/alunos	Lista alunos	ROLE_EMPRESA/Admin
-GET	/empresas	Lista empresas	ROLE_ADMIN
 ```
 
-## 👨‍💻 Equipe / Contribuidores
-Back-end: Você 🎯
+---
+### 🧰 Exemplo de Login (Request e Response)
 
-Front-end: Equipe parceira
+**POST /auth/login**
 
-Banco de dados: MySQL 8
+#### 📥 Request
+```json
+{
+  "email": "usuario@exemplo.com",
+  "senha": "123456"
+}
+```
 
-## 📝 Notas
-Use Java 24 (já configurado no pom.xml).
+#### 📤 Response
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "tipo": "Bearer",
+  "expiraEm": "2025-11-01T12:00:00Z",
+  "usuario": {
+    "id": 1,
+    "nome": "exempleAluno",
+    "role": "ROLE_ALUNO"
+  }
+}
+```
 
-Certifique-se que o MySQL está rodando antes de iniciar a API.
+---
 
-Caso altere a porta (server.port), avise a equipe de front.
+## 📄 Exemplo de Entidade: Usuario
 
+```java
+package kairos.residencia.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "usuario")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Usuario {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private String senha;
+
+    @Column(nullable = false)
+    private String role; 
+
+    // perfil opcional
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Aluno aluno;
+
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Empresa empresa;
+}
+```
+
+---
+
+## 📡 Endpoints Principais
+
+| Método | Endpoint        | Descrição                                  | Permissão                 |
+|:-------|:----------------|:-------------------------------------------|:---------------------------|
+| POST   | `/auth/login`   | Autentica o usuário e retorna o token JWT  | Público                    |
+| POST   | `/usuarios`     | Cria um novo usuário                       | Público                    |
+| GET    | `/usuarios/me`  | Retorna o perfil do usuário autenticado    | Autenticado                |
+| GET    | `/alunos`       | Lista todos os alunos                      | ROLE_EMPRESA / ROLE_ADMIN  |
+| GET    | `/empresas`     | Lista todas as empresas                    | ROLE_ADMIN                 |
+
+---
+
+## 🧠 Boas Práticas
+
+- Use **Java 24**, conforme definido no `pom.xml`.
+- Verifique se o **MySQL** está rodando antes de iniciar a aplicação.
+- Caso altere a porta (`server.port`), **informe a equipe de front-end**.
+- Tokens JWT expiram após **24 horas** (configurável em `app.jwt.expiration-ms`).
+
+---
+
+## 👨‍💻 Equipe
+
+| Função | Responsável |
+|:-------|:-------------|
+| Back-end | **Thiago Ribeiro** 🎯 |
+| Front-end | Equipe Parceira |
+| Banco de Dados | **MySQL 8** |
+
+---
+
+✨ **Desenvolvido com Java e café ☕ por [Thiago Ribeiro](https://github.com/ThiagoRAlmeida2)**
