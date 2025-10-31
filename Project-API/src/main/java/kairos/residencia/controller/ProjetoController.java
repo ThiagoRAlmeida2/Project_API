@@ -1,7 +1,7 @@
 package kairos.residencia.controller;
 
 import kairos.residencia.Dto.ProjetoDTO;
-import kairos.residencia.Dto.InscricaoProjetoResponseDTO;
+import kairos.residencia.response.InscricaoProjetoResponse;
 import kairos.residencia.model.*;
 import kairos.residencia.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
-import kairos.residencia.Dto.ProjetoResponse;
+import kairos.residencia.response.ProjetoResponse;
 
 import java.util.List;
 
@@ -50,7 +50,7 @@ public class ProjetoController {
 
     // 🔹 Listar projetos nos quais o aluno está inscrito
     @GetMapping("/inscricoes")
-    public ResponseEntity<List<InscricaoProjetoResponseDTO>> listarInscricoesAluno(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<InscricaoProjetoResponse>> listarInscricoesAluno(@AuthenticationPrincipal User user) {
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -61,12 +61,12 @@ public class ProjetoController {
 
         List<Inscricao> inscricoes = inscricaoRepo.findByAluno_Id(aluno.getId());
 
-        List<InscricaoProjetoResponseDTO> projetosInscritos = inscricoes.stream()
+        List<InscricaoProjetoResponse> projetosInscritos = inscricoes.stream()
                 .filter(inscricao -> inscricao.getProjeto() != null)
                 .map(inscricao -> {
                     Projeto p = inscricao.getProjeto();
 
-                    InscricaoProjetoResponseDTO dto = new InscricaoProjetoResponseDTO();
+                    InscricaoProjetoResponse dto = new InscricaoProjetoResponse();
 
                     // Mapeia campos do Projeto
                     dto.setId(p.getId());

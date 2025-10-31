@@ -1,4 +1,4 @@
-package kairos.residencia.Dto;
+package kairos.residencia.response;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
