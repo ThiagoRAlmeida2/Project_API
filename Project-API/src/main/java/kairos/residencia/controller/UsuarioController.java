@@ -118,8 +118,6 @@ public class UsuarioController {
     // -----------------------------------------------------
     // 🔹 ENDPOINTS DE DASHBOARD (Apenas Empresa)
     // -----------------------------------------------------
-
-    // 🔹 1. LISTA TODOS OS CANDIDATOS PARA A EMPRESA LOGADA
     @GetMapping("/dashboard/candidatos")
     public ResponseEntity<List<CandidatoResponse>> listarCandidatosDashboard(@AuthenticationPrincipal User user) {
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
@@ -182,7 +180,7 @@ public class UsuarioController {
     }
 
     // 🔹 4. DECLINAR CANDIDATO
-    @PostMapping("/inscricao/{inscricaoId}/declinar")
+    @PostMapping("/inscricao/{inscricaoId}/rejeitar")
     public ResponseEntity<?> declinarCandidato(
             @AuthenticationPrincipal User user,
             @PathVariable Long inscricaoId

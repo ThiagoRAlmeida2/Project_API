@@ -1,17 +1,16 @@
 package kairos.residencia.controller;
 
 import kairos.residencia.Dto.ProjetoDTO;
+import kairos.residencia.Dto.InscricaoProjetoResponseDTO;
 import kairos.residencia.model.*;
 import kairos.residencia.repository.*;
-import kairos.residencia.Dto.InscricaoProjetoResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
+import kairos.residencia.Dto.ProjetoResponse;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -25,19 +24,6 @@ public class ProjetoController {
     private final AlunoRepository alunoRepo;
     private final InscricaoRepository inscricaoRepo;
 
-    public record ProjetoResponse(
-            Long id,
-            String nome,
-            String descricao,
-            LocalDateTime dataCriacao,
-            String empresaNome,
-            boolean encerrado,
-            // NOVOS CAMPOS
-            String tags,
-            String regime,
-            LocalDate dataInicio,
-            LocalDate dataFim
-    ) {}
     // 🔹 Listar todos (público) - APENAS ATIVOS com JOIN FETCH
     @GetMapping("/public")
     public ResponseEntity<List<ProjetoResponse>> listarPublico() {
@@ -54,7 +40,9 @@ public class ProjetoController {
                         p.getTags(),
                         p.getRegime(),
                         p.getDataInicio(),
-                        p.getDataFim()
+                        p.getDataFim(),
+                        0L, // Contagem sempre zero para o público/aluno
+                        0L  // Contagem sempre zero para o público/aluno
                 ))
                 .toList();
         return ResponseEntity.ok(projetos);
@@ -62,7 +50,6 @@ public class ProjetoController {
 
     // 🔹 Listar projetos nos quais o aluno está inscrito
     @GetMapping("/inscricoes")
-    // 🚩 MUDANÇA: Altera o retorno para usar a nova classe DTO
     public ResponseEntity<List<InscricaoProjetoResponseDTO>> listarInscricoesAluno(@AuthenticationPrincipal User user) {
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
@@ -74,7 +61,6 @@ public class ProjetoController {
 
         List<Inscricao> inscricoes = inscricaoRepo.findByAluno_Id(aluno.getId());
 
-        // 🚩 CRÍTICO: Mapeamento para a nova classe DTO
         List<InscricaoProjetoResponseDTO> projetosInscritos = inscricoes.stream()
                 .filter(inscricao -> inscricao.getProjeto() != null)
                 .map(inscricao -> {
@@ -94,7 +80,7 @@ public class ProjetoController {
                     dto.setDataInicio(p.getDataInicio());
                     dto.setDataFim(p.getDataFim());
 
-                    // 🚩 ADICIONA O STATUS DA INSCRIÇÃO!
+                    // ADICIONA O STATUS DA INSCRIÇÃO!
                     dto.setStatus(inscricao.getStatus());
 
                     return dto;
@@ -107,7 +93,7 @@ public class ProjetoController {
 
     // 🔹 Criar projeto
     @PostMapping("/criar")
-    public ResponseEntity<ProjetoResponse> criarProjeto(
+    public ResponseEntity<?> criarProjeto(
             @AuthenticationPrincipal User user,
             @RequestBody ProjetoDTO req
     ) {
@@ -115,7 +101,7 @@ public class ProjetoController {
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         Empresa empresa = empresaRepo.findByUsuario(usuario);
         if (empresa == null) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.badRequest().body("Apenas empresas podem criar projetos");
         }
         Projeto novo = new Projeto();
         novo.setNome(req.getNome());
@@ -128,8 +114,6 @@ public class ProjetoController {
         novo.setDataFim(req.getDataFim());
 
         Projeto salvo = projetoRepo.save(novo);
-
-        // Retorna o DTO com os novos campos
         ProjetoResponse response = new ProjetoResponse(
                 salvo.getId(),
                 salvo.getNome(),
@@ -140,41 +124,49 @@ public class ProjetoController {
                 salvo.getTags(),
                 salvo.getRegime(),
                 salvo.getDataInicio(),
-                salvo.getDataFim()
+                salvo.getDataFim(),
+                0L, // Contagem zero
+                0L  // Contagem zero
         );
-
         return ResponseEntity.ok(response);
     }
 
     // 🔹 Listar projetos da empresa logada
     @GetMapping("/meus")
-    public ResponseEntity<List<ProjetoResponse>> listarMeusProjetos(@AuthenticationPrincipal User user) {
+    public ResponseEntity<?> listarMeusProjetos(@AuthenticationPrincipal User user) {
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         Empresa empresa = empresaRepo.findByUsuario(usuario);
         if (empresa == null) {
-            return ResponseEntity.status(403).body(List.of());
+            return ResponseEntity.status(403).body("Apenas empresas podem acessar seus projetos");
         }
 
         List<Projeto> projetos = projetoRepo.findByEmpresa(empresa);
 
-        // Mapeia para o DTO com os novos campos
         List<ProjetoResponse> meusProjetosDTO = projetos.stream()
-                .map(p -> new ProjetoResponse(
-                        p.getId(),
-                        p.getNome(),
-                        p.getDescricao(),
-                        p.getDataCriacao(),
-                        p.getEmpresa().getNome(),
-                        p.isEncerrado(),
-                        p.getTags(),
-                        p.getRegime(),
-                        p.getDataInicio(),
-                        p.getDataFim()
-                ))
-                .toList();
+                .map(p -> {
+                    // Busca as contagens
+                    Long totalCandidatos = inscricaoRepo.countByProjetoId(p.getId());
+                    Long aprovados = inscricaoRepo.countAprovadosByProjetoId(p.getId());
 
+                    // Mapeia para o DTO com os novos campos
+                    return new ProjetoResponse(
+                            p.getId(),
+                            p.getNome(),
+                            p.getDescricao(),
+                            p.getDataCriacao(),
+                            p.getEmpresa().getNome(),
+                            p.isEncerrado(),
+                            p.getTags(),
+                            p.getRegime(),
+                            p.getDataInicio(),
+                            p.getDataFim(),
+                            totalCandidatos,
+                            aprovados
+                    );
+                })
+                .toList();
         return ResponseEntity.ok(meusProjetosDTO);
     }
 
@@ -238,6 +230,8 @@ public class ProjetoController {
         novaInscricao.setAluno(aluno);
         novaInscricao.setProjeto(projeto);
         novaInscricao.setPapel("Participante");
+        // Status inicial
+        novaInscricao.setStatus("PENDENTE");
 
         inscricaoRepo.save(novaInscricao);
 
@@ -261,7 +255,7 @@ public class ProjetoController {
         Inscricao inscricao = inscricaoRepo.findByProjeto_IdAndAluno_Id(projetoId, aluno.getId())
                 .orElseThrow(() -> new RuntimeException("Inscrição não encontrada para este aluno e projeto"));
 
-        // Verifica se o status permite cancelamento (e.g., só PENDENTE pode cancelar)
+        // Verifica se o status permite cancelamento
         if (!"PENDENTE".equals(inscricao.getStatus())) {
             return ResponseEntity.badRequest().body("Não é possível cancelar uma inscrição que já foi " + inscricao.getStatus() + ".");
         }
