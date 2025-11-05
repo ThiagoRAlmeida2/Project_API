@@ -29,7 +29,8 @@ public class SecurityConfig {
                     var config = new CorsConfiguration();
                     config.setAllowedOrigins(List.of(
                             "http://localhost:5173",
-                            "http://127.0.0.1:5173"
+                            "http://127.0.0.1:5173",
+                            "https://project-kairos-wine.vercel.app"
                     ));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("*"));
@@ -39,7 +40,7 @@ public class SecurityConfig {
                 }))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // 🔓 Endpoints públicos
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/v3/api-docs/**",
