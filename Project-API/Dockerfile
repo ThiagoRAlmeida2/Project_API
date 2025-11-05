@@ -1,27 +1,19 @@
-# Usa uma imagem base que já tem Java 21 e Maven
+# ETAPA 1: BUILD (Usa uma imagem com Java e Maven)
 FROM maven:3.9.6-openjdk-21 AS build
 
-# Define o diretório de trabalho dentro do container
 WORKDIR /app
-
-# Copia o código do seu projeto para o container
 COPY . /app/
-
-# Compila o projeto (cria o JAR)
+# Compila o JAR
 RUN mvn clean package -DskipTests
 
-# ==========================================================
-# SEGUNDA ETAPA: RODA A APLICAÇÃO (Melhor e mais leve)
-# ==========================================================
+# ----------------------------------------------------------
 
-# Usa uma imagem mais leve que só tem o JRE para rodar o JAR
-FROM openjdk:21-jre-slim
+# ETAPA 2: RUN (Usa uma imagem mais leve com apenas o JRE)
+FROM openjdk:21-slim-jre # <-- A TAG CORRIGIDA AQUI!
 
-# Expõe a porta que o Spring Boot usa
 EXPOSE 8080
-
-# Copia o JAR compilado da etapa 'build'
+# Copia o JAR compilado
 COPY --from=build /app/target/*.jar app.jar
 
-# Define o comando de inicialização
+# Comando de inicialização
 ENTRYPOINT ["java", "-jar", "/app.jar"]
