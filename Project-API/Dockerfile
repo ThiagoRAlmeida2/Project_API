@@ -1,18 +1,19 @@
-# ETAPA 1: BUILD (Usa uma imagem com Java e Maven)
-FROM maven:3.9.6-openjdk-21 AS build
+# ETAPA 1: BUILD (Usa a imagem Eclipse Temurin 24 com Maven)
+# O Temurin costuma ter tags para as versões mais recentes.
+FROM eclipse-temurin:24-jdk-alpine AS build
 
 WORKDIR /app
 COPY . /app/
-# Compila o JAR
-RUN mvn clean package -DskipTests
+# Compila o JAR usando o Maven que deve estar na imagem
+RUN ./mvnw clean package -DskipTests
 
 # ----------------------------------------------------------
 
-# ETAPA 2: RUN (Usa uma imagem mais leve com apenas o JRE)
-FROM openjdk:21-slim-jre
+# ETAPA 2: RUN (Usa a imagem Temurin 24 JRE mais leve)
+FROM eclipse-temurin:24-jre-alpine
 
 EXPOSE 8080
-# Copia o JAR compilado
+# Copia o JAR compilado da etapa 'build'
 COPY --from=build /app/target/*.jar app.jar
 
 # Comando de inicialização
