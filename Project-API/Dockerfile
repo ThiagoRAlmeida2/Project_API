@@ -9,7 +9,7 @@ RUN mvn clean package -DskipTests
 # ----------------------------------------------------------
 
 # ETAPA 2: RUN (Usa uma imagem mais leve com apenas o JRE)
-FROM openjdk:21-slim-jre # <-- A TAG CORRIGIDA AQUI!
+FROM openjdk:21-slim-jre
 
 EXPOSE 8080
 # Copia o JAR compilado
