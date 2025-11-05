@@ -12,12 +12,12 @@ public class CORS {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173", "http://127.0.0.1:5173")
-                        .allowedMethods("*")
-                        .allowedHeaders("*")
-                        .exposedHeaders("Authorization")
-                        .allowCredentials(true); // 🔑 necessário para cookies e headers JWT
+                registry.addMapping("/**") // Aplica esta regra a todas as rotas (endpoints)
+                        // Permite o domínio exato do seu frontend Vercel:
+                        .allowedOrigins("https://project-kairos-wine.vercel.app")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Permite os métodos necessários
+                        .allowedHeaders("*") // Permite todos os cabeçalhos
+                        .allowCredentials(true);
             }
         };
     }
