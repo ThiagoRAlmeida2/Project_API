@@ -14,6 +14,7 @@ public class CORS {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**") // Aplica esta regra a todas as rotas (endpoints)
                         // Permite o domínio exato do seu frontend Vercel:
+                        .allowedOrigins("https://localhost:5173")
                         .allowedOrigins("https://work-up-platform.vercel.app/")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Permite os métodos necessários
                         .allowedHeaders("*") // Permite todos os cabeçalhos
