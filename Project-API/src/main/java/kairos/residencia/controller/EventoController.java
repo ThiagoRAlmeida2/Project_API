@@ -20,6 +20,8 @@ import org.springframework.web.multipart.MultipartFile; // 👈 IMPORTE
 import org.springframework.web.server.ResponseStatusException;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import kairos.residencia.repository.EmpresaRepository;
+
 
 import java.io.IOException;
 import java.util.List;
@@ -36,6 +38,7 @@ public class EventoController {
     private final UsuarioRepository usuarioRepo;
     private final Cloudinary cloudinary;
     private final ObjectMapper objectMapper;
+    private final EmpresaRepository empresaRepo;
 
     private static final String DEFAULT_IMAGE_URL = "/assets/IMG/Conferencia de tecnologia.jpg";
 
@@ -76,15 +79,16 @@ public class EventoController {
         try {
             CreateEventDto req = objectMapper.readValue(eventDataJson, CreateEventDto.class);
 
-            // ... (lógica de verificação de usuário fica igual) ...
             Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
-
-            if (!"ROLE_EMPRESA".equals(usuario.getRole()) || usuario.getEmpresa() == null) {
+            if (!"ROLE_EMPRESA".equals(usuario.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas Empresas podem criar eventos.");
             }
-            Empresa empresa = usuario.getEmpresa();
+            Empresa empresa = empresaRepo.findByUsuario(usuario);
 
+            if (empresa == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Usuário empresa não associado a um registro de empresa.");
+            }
             Map uploadResult;
             if (file != null && !file.isEmpty()) {
                 uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
@@ -97,7 +101,7 @@ public class EventoController {
             Evento novoEvento = new Evento();
             novoEvento.setTitle(req.getTitle());
             novoEvento.setImageUrl(imageUrl);
-            novoEvento.setEmpresa(empresa);
+            novoEvento.setEmpresa(empresa); // Agora 'empresa' não será null
 
             Evento eventoSalvo = eventoRepo.save(novoEvento);
             EventoResponse responseDto = converterParaResponse(eventoSalvo);
