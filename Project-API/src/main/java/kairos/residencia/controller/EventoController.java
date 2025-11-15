@@ -113,7 +113,6 @@ public class EventoController {
             @AuthenticationPrincipal User user,
             @PathVariable Long id
     ) {
-        // ... (código inalterado) ...
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
 
