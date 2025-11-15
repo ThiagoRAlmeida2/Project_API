@@ -77,8 +77,10 @@ public class EventoController {
             @RequestParam("eventData") String eventDataJson
     ) {
         try {
+            // 1. O DTO (req) é lido corretamente
             CreateEventDto req = objectMapper.readValue(eventDataJson, CreateEventDto.class);
 
+            // 2. A verificação da empresa está correta
             Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
             if (!"ROLE_EMPRESA".equals(usuario.getRole())) {
@@ -89,6 +91,8 @@ public class EventoController {
             if (empresa == null) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Usuário empresa não associado a um registro de empresa.");
             }
+
+            // 3. O upload do Cloudinary está correto
             Map uploadResult;
             if (file != null && !file.isEmpty()) {
                 uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
@@ -97,18 +101,22 @@ public class EventoController {
             }
 
             String imageUrl = uploadResult.get("secure_url").toString();
-
             Evento novoEvento = new Evento();
             novoEvento.setTitle(req.getTitle());
+            novoEvento.setDescription(req.getDescription());
+            novoEvento.setDate(req.getDate());
+            novoEvento.setLocation(req.getLocation());
+            novoEvento.setCategory(req.getCategory());
             novoEvento.setImageUrl(imageUrl);
-            novoEvento.setEmpresa(empresa); // Agora 'empresa' não será null
-
+            novoEvento.setEmpresa(empresa);
             Evento eventoSalvo = eventoRepo.save(novoEvento);
+
             EventoResponse responseDto = converterParaResponse(eventoSalvo);
             return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
-
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Erro ao processar o arquivo: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro interno: " + e.getMessage());
         }
     }
 
@@ -148,6 +156,7 @@ public class EventoController {
         dto.setCategory(evento.getCategory());
         dto.setImageUrl(evento.getImageUrl());
         dto.setFeatured(evento.isFeatured());
+
         if (evento.getEmpresa() != null) {
             dto.setEmpresaNome(evento.getEmpresa().getNome());
         }
