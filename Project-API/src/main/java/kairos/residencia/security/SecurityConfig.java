@@ -60,7 +60,8 @@ public class SecurityConfig {
                                 "/api/projetos/*/encerrar",
                                 "/api/usuario/dashboard/candidatos",
                                 "/api/usuario/aluno/**",
-                                "/api/usuario/inscricao/**"
+                                "/api/usuario/inscricao/**",
+                                "/api/eventos/criar"
                         ).hasRole("EMPRESA")
                         .requestMatchers(HttpMethod.POST, "/api/eventos/criar").hasRole("EMPRESA")
                         .requestMatchers(HttpMethod.DELETE, "/api/eventos/*").hasRole("EMPRESA")
