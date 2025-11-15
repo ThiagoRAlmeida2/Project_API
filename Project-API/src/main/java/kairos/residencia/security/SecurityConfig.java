@@ -41,13 +41,19 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // URLs permitidas para todos
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/api/projetos/public"
+                                "/api/projetos/public",
+                                // 🟢 ADICIONE ESTA LINHA: Libera a pasta de uploads
+                                "/uploads/eventos/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/eventos").permitAll()
 
+                        // URLs permitidas para EMPRESA
                         .requestMatchers(
                                 "/api/projetos/meus",
                                 "/api/projetos/criar",
@@ -56,12 +62,17 @@ public class SecurityConfig {
                                 "/api/usuario/aluno/**",
                                 "/api/usuario/inscricao/**"
                         ).hasRole("EMPRESA")
+                        .requestMatchers(HttpMethod.POST, "/api/eventos/criar").hasRole("EMPRESA")
+                        .requestMatchers(HttpMethod.DELETE, "/api/eventos/*").hasRole("EMPRESA")
+
+                        // URLs permitidas para ALUNO
                         .requestMatchers(
                                 "/api/projetos/*/inscrever",
                                 "/api/projetos/inscricoes"
                         ).hasRole("ALUNO")
                         .requestMatchers(HttpMethod.DELETE, "/api/projetos/*/cancelar-inscricao")
                         .hasRole("ALUNO")
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
