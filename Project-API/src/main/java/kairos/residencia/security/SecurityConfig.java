@@ -25,35 +25,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(request -> {
-                    var config = new CorsConfiguration();
-                    config.setAllowedOrigins(List.of(
-                            "http://localhost:5173",
-                            "http://127.0.0.1:5173",
-                            "https://work-up-platform.vercel.app"
-                    ));
-                    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    config.setAllowedHeaders(List.of("*"));
-                    config.setExposedHeaders(List.of("Authorization"));
-                    config.setAllowCredentials(true);
-                    return config;
-                }))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // URLs permitidas para todos
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/api/projetos/public",
-                                // 🟢 ADICIONE ESTA LINHA: Libera a pasta de uploads
-                                "/uploads/eventos/**"
+                                "/api/projetos/public"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/eventos").permitAll()
 
-                        // URLs permitidas para EMPRESA
                         .requestMatchers(
                                 "/api/projetos/meus",
                                 "/api/projetos/criar",
@@ -61,19 +42,15 @@ public class SecurityConfig {
                                 "/api/usuario/dashboard/candidatos",
                                 "/api/usuario/aluno/**",
                                 "/api/usuario/inscricao/**",
-                                "/api/eventos/criar"
+                                "/api/eventos/criar",
+                                "/api/eventos/*"
                         ).hasRole("EMPRESA")
-                        .requestMatchers(HttpMethod.POST, "/api/eventos/criar").hasRole("EMPRESA")
-                        .requestMatchers(HttpMethod.DELETE, "/api/eventos/*").hasRole("EMPRESA")
-
-                        // URLs permitidas para ALUNO
                         .requestMatchers(
                                 "/api/projetos/*/inscrever",
                                 "/api/projetos/inscricoes"
                         ).hasRole("ALUNO")
                         .requestMatchers(HttpMethod.DELETE, "/api/projetos/*/cancelar-inscricao")
                         .hasRole("ALUNO")
-
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
