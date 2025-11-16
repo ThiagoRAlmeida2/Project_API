@@ -223,4 +223,29 @@ public class EventoController {
 
         return ResponseEntity.ok(eventosInscritos);
     }
+
+    @DeleteMapping("/{id}/cancelar")
+    public ResponseEntity<?> cancelarInscricaoEvento(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long id
+    ) {
+        // 1. Achar o Usuário (aluno) logado
+        Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado."));
+
+        // 2. Garantir que é um Aluno
+        if (!"ROLE_ALUNO".equals(usuario.getRole()) || usuario.getAluno() == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas Alunos podem cancelar inscrições.");
+        }
+        Aluno aluno = usuario.getAluno();
+
+        // 3. Achar a Inscrição específica
+        InscricaoEvento inscricao = inscricaoEventoRepo.findByAlunoIdAndEventoId(aluno.getId(), id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inscrição não encontrada."));
+
+        // 4. Deletar a inscrição
+        inscricaoEventoRepo.delete(inscricao);
+
+        return ResponseEntity.ok("Inscrição cancelada com sucesso.");
+    }
 }
