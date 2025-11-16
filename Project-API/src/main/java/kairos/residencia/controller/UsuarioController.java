@@ -91,6 +91,7 @@ public class UsuarioController {
         return ResponseEntity.ok(buildPerfilDTO(u));
     }
 
+
     // 👇 NOVO ENDPOINT DE UPLOAD DE FOTO 👇
     @PostMapping(value = "/me/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadFotoPerfil(
