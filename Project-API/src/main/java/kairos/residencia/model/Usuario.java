@@ -3,7 +3,9 @@ package kairos.residencia.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-    @Entity
+import java.util.List;
+
+@Entity
     @Table(name = "usuario")
     @Data
     @NoArgsConstructor
@@ -27,4 +29,7 @@ import lombok.*;
 
         @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
         private Empresa empresa;
+
+        @OneToMany(mappedBy = "aluno", cascade = CascadeType.ALL, orphanRemoval = true)
+        private List<InscricaoEvento> inscricoesEventos;
     }
