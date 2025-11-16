@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/projetos/*/cancelar-inscricao").hasRole("ALUNO")
                         .requestMatchers(HttpMethod.POST, "/api/eventos/*/inscrever").hasRole("ALUNO")
                         .requestMatchers(HttpMethod.GET, "/api/eventos/minhas-inscricoes").hasRole("ALUNO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/eventos/*/cancelar").hasRole("ALUNO")
                         .requestMatchers(
                                 "/api/projetos/meus",
                                 "/api/projetos/criar",
