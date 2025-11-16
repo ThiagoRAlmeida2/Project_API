@@ -37,7 +37,14 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/api/projetos/public"
                         ).permitAll()
-
+                        .requestMatchers(HttpMethod.GET, "/api/eventos").permitAll()
+                        .requestMatchers(
+                                "/api/projetos/*/inscrever",
+                                "/api/projetos/inscricoes"
+                        ).hasRole("ALUNO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/projetos/*/cancelar-inscricao").hasRole("ALUNO")
+                        .requestMatchers(HttpMethod.POST, "/api/eventos/*/inscrever").hasRole("ALUNO")
+                        .requestMatchers(HttpMethod.GET, "/api/eventos/minhas-inscricoes").hasRole("ALUNO")
                         .requestMatchers(
                                 "/api/projetos/meus",
                                 "/api/projetos/criar",
@@ -45,15 +52,9 @@ public class SecurityConfig {
                                 "/api/usuario/dashboard/candidatos",
                                 "/api/usuario/aluno/**",
                                 "/api/usuario/inscricao/**",
-                                "/api/eventos/criar",
-                                "/api/eventos/*"
+                                "/api/eventos/criar"
                         ).hasRole("EMPRESA")
-                        .requestMatchers(
-                                "/api/projetos/*/inscrever",
-                                "/api/projetos/inscricoes"
-                        ).hasRole("ALUNO")
-                        .requestMatchers(HttpMethod.DELETE, "/api/projetos/*/cancelar-inscricao")
-                        .hasRole("ALUNO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/eventos/*").hasRole("EMPRESA")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
