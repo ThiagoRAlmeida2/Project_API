@@ -16,6 +16,8 @@ public class Empresa {
     private String nome;
     private String cnpj;
 
+    private String fotoUrl;
+
     @OneToOne
     @JoinColumn(name = "usuario_id", unique = true)
     private Usuario usuario;
