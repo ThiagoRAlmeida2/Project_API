@@ -1,5 +1,3 @@
-// src/main/java/kairos/residencia/model/Inscricao.java
-
 package kairos.residencia.model;
 
 import jakarta.persistence.*;

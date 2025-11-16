@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 
 @Data
 public class InscricaoProjetoResponse {
-    // Campos do Projeto
     private Long id;
     private String nome;
     private String descricao;
@@ -18,6 +17,5 @@ public class InscricaoProjetoResponse {
     private LocalDate dataInicio;
     private LocalDate dataFim;
 
-    // Campo CRÍTICO da Inscrição
     private String status;
 }

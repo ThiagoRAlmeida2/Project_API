@@ -1,4 +1,4 @@
-package kairos.residencia.security; // ou seu pacote de configuração principal
+package kairos.residencia.security;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

@@ -1,7 +1,7 @@
 package kairos.residencia.controller;
 
-import com.cloudinary.Cloudinary; // 👈 IMPORTE
-import com.cloudinary.utils.ObjectUtils; // 👈 IMPORTE
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import kairos.residencia.Dto.CandidatoResponse;
 import kairos.residencia.Dto.PerfilDTO;
 import kairos.residencia.model.Empresa;
@@ -13,16 +13,16 @@ import kairos.residencia.repository.InscricaoRepository;
 import kairos.residencia.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType; // 👈 IMPORTE
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile; // 👈 IMPORTE
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException; // 👈 IMPORTE
+import java.io.IOException;
 import java.util.List;
-import java.util.Map; // 👈 IMPORTE
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/usuario")
@@ -31,7 +31,7 @@ public class UsuarioController {
     private final UsuarioRepository usuarioRepo;
     private final InscricaoRepository inscricaoRepo;
     private final AlunoRepository alunoRepo;
-    private final Cloudinary cloudinary; // 👈 INJEÇÃO DO CLOUDINARY
+    private final Cloudinary cloudinary;
 
     private PerfilDTO buildPerfilDTO(Usuario u) {
         PerfilDTO dto = new PerfilDTO();
@@ -45,9 +45,8 @@ public class UsuarioController {
             a.setMatricula(u.getAluno().getMatricula());
             a.setDescricao(u.getAluno().getDescricao());
             a.setTags(u.getAluno().getTags());
-            a.setFotoUrl(u.getAluno().getFotoUrl()); // 👈 MAPEIA A FOTO
+            a.setFotoUrl(u.getAluno().getFotoUrl());
 
-            // Mapeia Projetos Participados
             List<Inscricao> inscricoes = inscricaoRepo.findByAluno_Id(u.getAluno().getId());
             List<PerfilDTO.ProjetoParticipadoDTO> projetos = inscricoes.stream()
                     .filter(i -> i.getProjeto() != null)
@@ -73,15 +72,11 @@ public class UsuarioController {
             PerfilDTO.EmpresaDTO e = new PerfilDTO.EmpresaDTO();
             e.setNome(u.getEmpresa().getNome());
             e.setCnpj(u.getEmpresa().getCnpj());
-            e.setFotoUrl(u.getEmpresa().getFotoUrl()); // 👈 MAPEIA A FOTO
+            e.setFotoUrl(u.getEmpresa().getFotoUrl());
             dto.setEmpresa(e);
         }
         return dto;
     }
-
-    // -----------------------------------------------------
-    // 🔹 ENDPOINTS DE PERFIL
-    // -----------------------------------------------------
 
     @GetMapping("/me")
     public ResponseEntity<?> me(@AuthenticationPrincipal User user){
@@ -91,8 +86,6 @@ public class UsuarioController {
         return ResponseEntity.ok(buildPerfilDTO(u));
     }
 
-
-    // 👇 NOVO ENDPOINT DE UPLOAD DE FOTO 👇
     @PostMapping(value = "/me/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadFotoPerfil(
             @AuthenticationPrincipal User user,
@@ -106,11 +99,9 @@ public class UsuarioController {
             var u = usuarioRepo.findByEmail(user.getUsername())
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-            // 1. Upload para o Cloudinary
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
             String url = uploadResult.get("secure_url").toString();
 
-            // 2. Salva a URL na entidade correta
             if ("ROLE_ALUNO".equals(u.getRole()) && u.getAluno() != null) {
                 u.getAluno().setFotoUrl(url);
             } else if ("ROLE_EMPRESA".equals(u.getRole()) && u.getEmpresa() != null) {
@@ -121,15 +112,12 @@ public class UsuarioController {
 
             usuarioRepo.save(u);
 
-            // Retorna a URL nova
             return ResponseEntity.ok(Map.of("url", url));
 
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro ao fazer upload da imagem: " + e.getMessage());
         }
     }
-    // 👆 FIM DO NOVO ENDPOINT 👆
-
 
     @PutMapping("/me")
     public ResponseEntity<?> atualizarPerfil(
@@ -164,8 +152,6 @@ public class UsuarioController {
         return ResponseEntity.ok("Perfil e dados associados deletados");
     }
 
-    // ... (Os métodos do Dashboard /dashboard/candidatos, aprovar, rejeitar, etc, continuam iguais abaixo)
-    // Mantenha o restante do arquivo como estava...
     @GetMapping("/dashboard/candidatos")
     public ResponseEntity<List<CandidatoResponse>> listarCandidatosDashboard(@AuthenticationPrincipal User user) {
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())

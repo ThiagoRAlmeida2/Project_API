@@ -18,12 +18,11 @@ import java.util.List;
         private String email;
 
         @Column(nullable = false)
-        private String senha; // já criptografada
+        private String senha;
 
         @Column(nullable = false)
         private String role; // "ROLE_ALUNO" ou "ROLE_EMPRESA" ou "ROLE_ADMIN"
 
-        // perfil opcional
         @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
         private Aluno aluno;
 

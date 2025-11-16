@@ -3,7 +3,6 @@ package kairos.residencia.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -24,19 +23,18 @@ public class Evento {
     private String description;
 
     @Column(nullable = false)
-    private String date; // Manter como String por enquanto, conforme o front (Ex: "15 Jan")
+    private String date;
 
     @Column(nullable = false)
-    private String location; // Online ou local físico
+    private String location;
 
     @Column(nullable = false)
     private String category;
 
-    private String imageUrl; // URL ou path para a imagem
+    private String imageUrl;
 
-    private boolean featured = false; // Se deve ser destacado
+    private boolean featured = false;
 
-    // Relacionamento: Uma Empresa pode criar muitos Eventos
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;

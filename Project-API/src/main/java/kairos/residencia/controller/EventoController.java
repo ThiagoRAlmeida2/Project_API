@@ -75,10 +75,8 @@ public class EventoController {
             @RequestParam("eventData") String eventDataJson
     ) {
         try {
-            // 1. O DTO (req) é lido corretamente
             CreateEventDto req = objectMapper.readValue(eventDataJson, CreateEventDto.class);
 
-            // 2. A verificação da empresa está correta
             Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                     .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
             if (!"ROLE_EMPRESA".equals(usuario.getRole())) {
@@ -90,7 +88,6 @@ public class EventoController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Usuário empresa não associado a um registro de empresa.");
             }
 
-            // 3. O upload do Cloudinary está correto
             Map uploadResult;
             if (file != null && !file.isEmpty()) {
                 uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
@@ -167,27 +164,22 @@ public class EventoController {
             @AuthenticationPrincipal User user,
             @PathVariable Long id
     ) {
-        // 1. Achar o Usuário (aluno) logado
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado."));
 
-        // 2. Garantir que é um Aluno
         if (!"ROLE_ALUNO".equals(usuario.getRole()) || usuario.getAluno() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas Alunos podem se inscrever.");
         }
         Aluno aluno = usuario.getAluno();
 
-        // 3. Achar o Evento
         Evento evento = eventoRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento não encontrado."));
 
-        // 4. Verificar se já está inscrito
         Optional<InscricaoEvento> inscricaoExistente = inscricaoEventoRepo.findByAlunoIdAndEventoId(aluno.getId(), evento.getId());
         if (inscricaoExistente.isPresent()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Você já está inscrito neste evento.");
         }
 
-        // 5. Criar e salvar a inscrição
         InscricaoEvento novaInscricao = new InscricaoEvento();
         novaInscricao.setAluno(aluno.getUsuario());
         novaInscricao.setEvento(evento);
@@ -197,28 +189,23 @@ public class EventoController {
         return ResponseEntity.status(HttpStatus.CREATED).body("Inscrição realizada com sucesso!");
     }
 
-    // --- 👇 3. ADICIONE ESTE NOVO ENDPOINT (GET) 👇 ---
     @GetMapping("/minhas-inscricoes")
     public ResponseEntity<List<EventoResponse>> listarMinhasInscricoes(
             @AuthenticationPrincipal User user
     ) {
-        // 1. Achar o Usuário (aluno) logado
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado."));
 
-        // 2. Garantir que é um Aluno
         if (!"ROLE_ALUNO".equals(usuario.getRole()) || usuario.getAluno() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(List.of());
         }
         Aluno aluno = usuario.getAluno();
 
-        // 3. Buscar as inscrições no repositório
         List<InscricaoEvento> inscricoes = inscricaoEventoRepo.findByAlunoId(aluno.getId());
 
-        // 4. Mapear as inscrições de volta para uma lista de Eventos
         List<EventoResponse> eventosInscritos = inscricoes.stream()
-                .map(InscricaoEvento::getEvento) // Pega o Evento de dentro da Inscrição
-                .map(this::converterParaResponse) // Reutiliza seu DTO
+                .map(InscricaoEvento::getEvento)
+                .map(this::converterParaResponse)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(eventosInscritos);
@@ -229,21 +216,17 @@ public class EventoController {
             @AuthenticationPrincipal User user,
             @PathVariable Long id
     ) {
-        // 1. Achar o Usuário (aluno) logado
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado."));
 
-        // 2. Garantir que é um Aluno
         if (!"ROLE_ALUNO".equals(usuario.getRole()) || usuario.getAluno() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas Alunos podem cancelar inscrições.");
         }
         Aluno aluno = usuario.getAluno();
 
-        // 3. Achar a Inscrição específica
         InscricaoEvento inscricao = inscricaoEventoRepo.findByAlunoIdAndEventoId(aluno.getId(), id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inscrição não encontrada."));
 
-        // 4. Deletar a inscrição
         inscricaoEventoRepo.delete(inscricao);
 
         return ResponseEntity.ok("Inscrição cancelada com sucesso.");

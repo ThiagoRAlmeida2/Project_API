@@ -8,7 +8,6 @@ public class ProjetoDTO {
     private String nome;
     private String descricao;
 
-    // NOVOS CAMPOS
     private String tags;
     private String regime;
     private LocalDate dataInicio;

@@ -9,7 +9,6 @@ import java.util.Map;
 @Configuration
 public class CloudinaryConfig {
 
-    // Você vai colocar esses valores nas variáveis de ambiente do seu servidor
     private final String CLOUD_NAME = System.getenv("CLOUDINARY_CLOUD_NAME");
     private final String API_KEY = System.getenv("CLOUDINARY_API_KEY");
     private final String API_SECRET = System.getenv("CLOUDINARY_API_SECRET");

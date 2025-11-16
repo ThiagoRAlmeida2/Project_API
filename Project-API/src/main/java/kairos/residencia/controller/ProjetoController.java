@@ -24,7 +24,6 @@ public class ProjetoController {
     private final AlunoRepository alunoRepo;
     private final InscricaoRepository inscricaoRepo;
 
-    // 🔹 Listar todos (público) - APENAS ATIVOS com JOIN FETCH
     @GetMapping("/public")
     public ResponseEntity<List<ProjetoResponse>> listarPublico() {
         List<Projeto> projetosAtivos = projetoRepo.findAllActiveWithEmpresa();
@@ -48,7 +47,6 @@ public class ProjetoController {
         return ResponseEntity.ok(projetos);
     }
 
-    // 🔹 Listar projetos nos quais o aluno está inscrito
     @GetMapping("/inscricoes")
     public ResponseEntity<List<InscricaoProjetoResponse>> listarInscricoesAluno(@AuthenticationPrincipal User user) {
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
@@ -68,7 +66,6 @@ public class ProjetoController {
 
                     InscricaoProjetoResponse dto = new InscricaoProjetoResponse();
 
-                    // Mapeia campos do Projeto
                     dto.setId(p.getId());
                     dto.setNome(p.getNome());
                     dto.setDescricao(p.getDescricao());
@@ -80,7 +77,6 @@ public class ProjetoController {
                     dto.setDataInicio(p.getDataInicio());
                     dto.setDataFim(p.getDataFim());
 
-                    // ADICIONA O STATUS DA INSCRIÇÃO!
                     dto.setStatus(inscricao.getStatus());
 
                     return dto;
@@ -91,7 +87,6 @@ public class ProjetoController {
     }
 
 
-    // 🔹 Criar projeto
     @PostMapping("/criar")
     public ResponseEntity<?> criarProjeto(
             @AuthenticationPrincipal User user,
@@ -131,7 +126,6 @@ public class ProjetoController {
         return ResponseEntity.ok(response);
     }
 
-    // 🔹 Listar projetos da empresa logada
     @GetMapping("/meus")
     public ResponseEntity<?> listarMeusProjetos(@AuthenticationPrincipal User user) {
         Usuario usuario = usuarioRepo.findByEmail(user.getUsername())
@@ -146,11 +140,9 @@ public class ProjetoController {
 
         List<ProjetoResponse> meusProjetosDTO = projetos.stream()
                 .map(p -> {
-                    // Busca as contagens
                     Long totalCandidatos = inscricaoRepo.countByProjetoId(p.getId());
                     Long aprovados = inscricaoRepo.countAprovadosByProjetoId(p.getId());
 
-                    // Mapeia para o DTO com os novos campos
                     return new ProjetoResponse(
                             p.getId(),
                             p.getNome(),
@@ -171,7 +163,6 @@ public class ProjetoController {
     }
 
 
-    // 🔹 Encerrar projeto
     @PostMapping("/{id}/encerrar")
     public ResponseEntity<String> encerrarProjeto(
             @AuthenticationPrincipal User user,
@@ -201,7 +192,6 @@ public class ProjetoController {
         return ResponseEntity.ok("Projeto encerrado com sucesso");
     }
 
-    // 🔹 Inscrever-se no projeto (ENDPOINT DE INSCRIÇÃO)
     @PostMapping("/{id}/inscrever")
     public ResponseEntity<String> inscreverProjeto(
             @AuthenticationPrincipal User user,
@@ -230,7 +220,6 @@ public class ProjetoController {
         novaInscricao.setAluno(aluno);
         novaInscricao.setProjeto(projeto);
         novaInscricao.setPapel("Participante");
-        // Status inicial
         novaInscricao.setStatus("PENDENTE");
 
         inscricaoRepo.save(novaInscricao);
@@ -238,7 +227,6 @@ public class ProjetoController {
         return ResponseEntity.ok("Inscrição realizada com sucesso!");
     }
 
-    // 🔹 Cancelar inscrição em projeto
     @DeleteMapping("/{id}/cancelar-inscricao")
     public ResponseEntity<String> cancelarInscricao(
             @AuthenticationPrincipal User user,
@@ -255,7 +243,6 @@ public class ProjetoController {
         Inscricao inscricao = inscricaoRepo.findByProjeto_IdAndAluno_Id(projetoId, aluno.getId())
                 .orElseThrow(() -> new RuntimeException("Inscrição não encontrada para este aluno e projeto"));
 
-        // Verifica se o status permite cancelamento
         if (!"PENDENTE".equals(inscricao.getStatus())) {
             return ResponseEntity.badRequest().body("Não é possível cancelar uma inscrição que já foi " + inscricao.getStatus() + ".");
         }

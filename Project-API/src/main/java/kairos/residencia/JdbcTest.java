@@ -6,9 +6,9 @@ import java.sql.SQLException;
 
 public class JdbcTest {
 
-    static final String DB_URL = "jdbc:mysql://localhost:3306/kairos_db";
-    static final String USER = "K1NG45";
-    static final String PASS = "Thiagomitosis12!";
+    static final String DB_URL = "jdbc:mysql://localhost:3306/seu_bd";
+    static final String USER = "seu_usuario";
+    static final String PASS = "sua_senha";
 
     public static void main(String[] args) {
         System.out.println("--- Testando Conexão JDBC com MySQL ---");
