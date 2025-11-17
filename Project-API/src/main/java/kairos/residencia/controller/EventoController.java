@@ -175,15 +175,13 @@ public class EventoController {
         Evento evento = eventoRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Evento não encontrado."));
 
-        Long usuarioId = usuario.getId();
-
-        Optional<InscricaoEvento> inscricaoExistente = inscricaoEventoRepo.findByAlunoIdAndEventoId(usuarioId, evento.getId());
+        Optional<InscricaoEvento> inscricaoExistente = inscricaoEventoRepo.findByAlunoIdAndEventoId(aluno.getId(), evento.getId());
         if (inscricaoExistente.isPresent()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Você já está inscrito neste evento.");
         }
 
         InscricaoEvento novaInscricao = new InscricaoEvento();
-        novaInscricao.setAluno(usuario);
+        novaInscricao.setAluno(aluno.getUsuario());
         novaInscricao.setEvento(evento);
 
         inscricaoEventoRepo.save(novaInscricao);
@@ -201,10 +199,9 @@ public class EventoController {
         if (!"ROLE_ALUNO".equals(usuario.getRole()) || usuario.getAluno() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(List.of());
         }
+        Aluno aluno = usuario.getAluno();
 
-        Long usuarioId = usuario.getId();
-
-        List<InscricaoEvento> inscricoes = inscricaoEventoRepo.findByAlunoId(usuarioId);
+        List<InscricaoEvento> inscricoes = inscricaoEventoRepo.findByAlunoId(aluno.getId());
 
         List<EventoResponse> eventosInscritos = inscricoes.stream()
                 .map(InscricaoEvento::getEvento)
@@ -225,10 +222,9 @@ public class EventoController {
         if (!"ROLE_ALUNO".equals(usuario.getRole()) || usuario.getAluno() == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Apenas Alunos podem cancelar inscrições.");
         }
+        Aluno aluno = usuario.getAluno();
 
-        Long usuarioId = usuario.getId();
-
-        InscricaoEvento inscricao = inscricaoEventoRepo.findByAlunoIdAndEventoId(usuarioId, id)
+        InscricaoEvento inscricao = inscricaoEventoRepo.findByAlunoIdAndEventoId(aluno.getId(), id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Inscrição não encontrada."));
 
         inscricaoEventoRepo.delete(inscricao);
