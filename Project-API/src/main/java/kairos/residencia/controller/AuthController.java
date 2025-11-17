@@ -52,53 +52,35 @@ public class AuthController {
 
         return ResponseEntity.ok(new LoginResponse(jwt, perfilCompleto));
     }
-
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<?> register(@RequestBody RegisterRequest req){
 
-        if (usuarioRepo.findByEmail(registerRequest.getEmail()).isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Erro: O email já está em uso!");
+        if(usuarioRepo.findByEmail(req.getEmail()).isPresent()){
+            return ResponseEntity.badRequest().body("Email já cadastrado");
         }
 
-        Usuario usuario = new Usuario();
-        usuario.setEmail(registerRequest.getEmail());
-        usuario.setSenha(passwordEncoder.encode(registerRequest.getSenha()));
+        Usuario u = new Usuario();
+        u.setEmail(req.getEmail());
+        u.setSenha(passwordEncoder.encode(req.getSenha()));
+        u.setRole(req.getRole());
 
-        String role = "ROLE_" + registerRequest.getRole().toUpperCase();
-        usuario.setRole(role);
-
-        Usuario usuarioSalvo = usuarioRepo.save(usuario);
-
-        try {
-            if ("ROLE_ALUNO".equals(role)) {
-                Aluno aluno = new Aluno();
-                aluno.setUsuario(usuarioSalvo);
-                aluno.setNome(registerRequest.getNome());
-                aluno.setCurso(registerRequest.getCurso());
-                aluno.setMatricula(registerRequest.getMatricula());
-                alunoRepo.save(aluno);
-
-                usuarioSalvo.setAluno(aluno);
-
-            } else if ("ROLE_EMPRESA".equals(role)) {
-                Empresa empresa = new Empresa();
-                empresa.setUsuario(usuarioSalvo);
-                empresa.setNome(registerRequest.getNome());
-                empresa.setCnpj(registerRequest.getCnpj());
-                empresaRepo.save(empresa);
-
-                usuarioSalvo.setEmpresa(empresa);
-            }
-
-            usuarioRepo.save(usuarioSalvo);
-
-        } catch (Exception e) {
-            usuarioRepo.delete(usuarioSalvo);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erro ao criar perfil de aluno/empresa: " + e.getMessage());
+        if("ROLE_ALUNO".equals(req.getRole())){
+            Aluno a = new Aluno();
+            a.setNome(req.getNome());
+            a.setCurso(req.getCurso());
+            a.setMatricula(req.getMatricula());
+            a.setUsuario(u);
+            u.setAluno(a);
+        } else if("ROLE_EMPRESA".equals(req.getRole())){
+            Empresa e = new Empresa();
+            e.setNome(req.getNome());
+            e.setCnpj(req.getCnpj());
+            e.setUsuario(u);
+            u.setEmpresa(e);
         }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("Usuário registrado com sucesso!");
+        usuarioRepo.save(u);
+        return ResponseEntity.ok("Registrado com sucesso");
     }
 
     private PerfilDTO buildPerfilDTO(Usuario u) {
