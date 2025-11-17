@@ -4,6 +4,9 @@ FROM eclipse-temurin:24-jdk-alpine AS build
 
 WORKDIR /app
 COPY . /app/
+
+RUN chmod +x ./mvnw
+
 # Compila o JAR usando o Maven que deve estar na imagem
 RUN ./mvnw clean package -DskipTests
 
