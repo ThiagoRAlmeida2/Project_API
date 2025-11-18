@@ -1,6 +1,8 @@
 package kairos.residencia.Dto;
 
 import lombok.Data;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.time.LocalDate;
 
@@ -10,6 +12,8 @@ public class PerfilDTO {
     private String role;
     private AlunoDTO aluno;
     private EmpresaDTO empresa;
+
+    private LocalDateTime dataCadastro;
 
     @Data
     public static class AlunoDTO {

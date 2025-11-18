@@ -37,6 +37,7 @@ public class UsuarioController {
         PerfilDTO dto = new PerfilDTO();
         dto.setEmail(u.getEmail());
         dto.setRole(u.getRole());
+        dto.setDataCadastro(u.getDataCadastro());
 
         if (u.getAluno() != null) {
             PerfilDTO.AlunoDTO a = new PerfilDTO.AlunoDTO();
